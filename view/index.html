@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopTonColis - {{.Title}}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+</head>
+<body>
+  <div class="box center column">
+    <div class="box center header">
+      <a href="/" class="title animated">ShopTonColis</a>
+      <img class="packageAnimated" src="/static/package.svg" alt="Package image">
+    </div>
+
+    {{ if not .ColisData }}
+      <div class="box center searchColis">
+        <img src="/static/delivery_follow.svg" alt="Delivery tracker image">
+        <div class="box">
+          <form action="/" method="GET">
+            <label for="code">Entrez votre code colis </label>
+            <input type="text" id="code" name="colis" placeholder="XXXXXXXX" required autofocus>
+            {{if .Error}}
+              <span class="alertMessage">{{.Error}}</span>
+            {{end}}
+            <button type="submit">Suivre mon colis</button>
+          </form>
+        </div>
+        <img src="/static/order_delivered.svg" alt="Order delivered image">
+      </div>
+    {{ else }}
+      <div class="box center column colisInfo">
+        <h2>Colis : {{.ColisData.PublicColisID}}</h2>
+
+        <ul class="progressbar" id="progressbar-colis">
+        </ul>
+
+        <img src="/static/on_the_way.svg" alt="Order delivered image">
+      </div>
+    {{ end }}
+  </div>
+
+  <footer>
+    <div class="box center column">
+      <div class="box widthed space">
+        <div class="box column">
+          <h1>ShopTonColis</h1>
+          <div class="box widthed space">
+            {{ if .IsAuth }}
+              <a href="/logout" class="secondary-text">Se déconnecter</a>
+              {{ if .CurrentUser.IsAdmin }}
+                <a href="/panel" class="secondary-text">Panel</a>
+              {{ end }}
+            {{ else }}
+              <a href="/login" class="secondary-text">Connexion</a>
+            {{ end }}
+          </div>
+        </div>
+
+        <div class="box column">
+          <h2>Contacts</h2>
+          <p class="secondary-text">contact@shoptoncolis.fr</p>
+          <p class="secondary-text">1, rue Sésame</p>
+        </div>
+
+        <div class="box column">
+          <h2>Entreprise</h2>
+          <a href="#" class="secondary-text">Nos valeurs</a>
+          <a href="#" class="secondary-text">Nos partenaires</a>
+        </div>
+
+        <div class="box column">
+          <h2>Légal</h2>
+          <a href="#" class="secondary-text">CGU / CGV</a>
+          <a href="#" class="secondary-text">Mentions Légales</a>
+        </div>
+
+      </div>
+    
+      <hr>
+
+      <p>© 2024 ShopTonColis SAS</p>
+    </div>
+  </footer>
+
+  {{ if .ColisData }}
+    <script>
+      let progressBar = document.getElementById("progressbar-colis")
+      let checkPointsDate = {{.ColisData.CheckPointsDate}};
+      for(let i=0; i<={{.ColisData.MaxStep}}; i++) {
+
+        let newLi = document.createElement("li");
+        if(i < {{.ColisData.MaxStep}} && i == {{.ColisData.Step}}){
+          newLi.classList.add("ongoing");
+        } else if(i <= {{.ColisData.Step}}) {
+          newLi.classList.add("active");
+          newLi.innerText = checkPointsDate[i];
+        }
+
+
+        if(i <= {{.ColisData.Step}}) {
+          newLi.innerText = checkPointsDate[i];
+          if(i==0){
+            newLi.innerText += "\nEnvoi du colis"
+          }
+        } else {
+          newLi.innerText = "..."
+        }
+        if(i-1 == {{.ColisData.Step}}) {
+          newLi.innerText = "En cours..."
+        }
+
+        if(i == {{.ColisData.MaxStep}}) {
+          newLi.innerText += "\nLivraison du colis"
+        }
+        progressBar.appendChild(newLi);
+      }
+    </script>
+  {{end}}
+</body>
+</html>

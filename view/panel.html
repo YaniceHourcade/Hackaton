@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>ShopTonColis - Panel</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
+</head>
+<body>
+  <div class="tab">
+    <div>
+      <button class="tablinks" onclick="openTab(event, 'ColisManager')" id="colisTab">Colis</button>
+      <button class="tablinks" onclick="openTab(event, 'UsersManager')" id="usersTab">Utilisateurs</button>
+    </div>
+
+    <div>
+      <a href="/" class="title little">ShopTonColis ©</a>
+    </div>
+
+    <div>
+      <a class="tablinks" href="/logout">Déconnexion</a>
+      <a class="tablinks" href="/">Accueil</a>
+    </div>
+  </div>
+
+  {{.Error}}
+
+  <div class="tabParams">
+    <div id="ColisManager" class="tabcontent">
+      <div class="box column allData">
+        <h2>Gestion des colis</h2>
+        <div>
+          <input type="text" list="allColisPID" id="colisInput" placeholder="Code colis" {{if .TargetedColis}} value="{{.TargetedColis.ColisID}}" {{end}}>
+          <datalist id="allColisPID">
+            {{range .AllColis}}
+                <option value="{{.ColisID}}">{{.PublicColisID}}</option>
+            {{end}}
+          </datalist>
+        </div>
+
+        <div class="box expandedWidth center">
+          <form action="/panel/colis/new" method="POST">
+            <button type="submit">Générer un suivi</button>
+          </form>        
+        </div>
+        <hr>
+        {{range .AllColis}}
+          <a class="listElement" href="/panel/colis/{{.ColisID}}">{{.PublicColisID}} - {{.Step}}/{{.MaxStep}}</a>
+        {{end}}
+      </div>
+      
+      <div class="containerData">
+        {{if .TargetedColis}}
+          <div class="box column">
+            <div class="box space">
+              <div class="box column">
+                <h2><u>ID public du colis:</u> {{.TargetedColis.PublicColisID}}</h2>
+                <h3><u>ID du colis:</u> {{.TargetedColis.ColisID}}</h3>
+                <h3><u>ID de transit:</u> {{.TargetedColis.TransitID}}</h3>
+                <div class="box">
+                  <a class="button" href="/?colis={{.TargetedColis.PublicColisID}}">Voir</a>
+                </div>
+                <hr>
+                <div class="box column">
+                  <h3><u>Etapes:</u> {{.TargetedColis.Step}}/{{.TargetedColis.MaxStep}}</h3>
+                  <ul>
+                    {{range $index, $value := .TargetedColis.CheckPointsDate}}
+                      <li><h4>Étape: <b>{{$index}}</b> | <u>{{$value}}</u></h4></li>
+                    {{end}}
+                  </ul>
+                </div>
+              </div>
+
+              <img id="qrCode" alt="QR Code" width="256" height="256">
+            </div>
+
+            <hr>
+            <div class="box expandedWidth space">
+              <div class="box">
+                <form action="/colis/{{.TargetedColis.ColisID}}/{{.TargetedColis.TransitID}}?action=cancel" method="POST">
+                  <button type="submit" id="cancelStepBtn">Annuler l'étape</button>
+                </form>
+        
+                <form action="/colis/{{.TargetedColis.ColisID}}/{{.TargetedColis.TransitID}}" method="POST">
+                  <button type="submit" id="validateStepBtn">Valider l'étape</button>
+                </form>
+              </div>
+    
+              <form action="/panel/colis/delete/{{.TargetedColis.ColisID}}" method="POST">
+                <button type="submit" class="danger">Supprimer le suivi</button>
+              </form>
+            </div>
+          </div>
+
+          <script>
+            let step = {{.TargetedColis.Step}};
+            if (step <= 0) {
+              document.getElementById("cancelStepBtn").setAttribute("disabled", "true");
+            } else if (step >= {{.TargetedColis.MaxStep}}) {
+              document.getElementById("validateStepBtn").setAttribute("disabled", "true");
+            }
+
+            let currentUrl = window.location.href;
+            let currentDomain = window.location.hostname;
+            let currentPort = window.location.port;
+
+            var baseUrl = 'http://' + currentDomain + (currentPort ? ':' + currentPort : '');
+            var qrUrl = baseUrl + '/colis/{{.TargetedColis.ColisID}}/{{.TargetedColis.TransitID}}';
+            var qrImg = document.querySelector('#qrCode');
+            qrImg.src = '/qr?url=' + encodeURIComponent(qrUrl);
+          </script>
+        {{else}}
+        <div class="box column center">
+          <h2>Aucun colis sélectionné</h2>
+          <hr>
+          <img class="illustration" src="/static/404.svg" alt="404 image">
+        </div>
+        {{end}}
+      </div>
+    </div>
+    
+    <div id="UsersManager" class="tabcontent">
+      <div class="box column allData">
+        <h2>Gestion des Utilisateurs</h2>
+        <div>
+          <input type="text" list="allUsersList" id="userInput" placeholder="Rechercher un utilisateur" {{if .TargetedUser}} value="{{.TargetedUser.Email}}" {{end}}>
+          <datalist id="allUsersList">
+            {{range .AllUsers}}
+                <option value="{{.ID}}">{{.Email}}</option>
+            {{end}}
+          </datalist>
+        </div>
+        <div class="box expandedWidth center">
+          <a class="button" href="/panel/user/new">Nouveau utilisateur</a>
+        </div>
+        <hr>
+        {{range .AllUsers}}
+          <a class="listElement" href="/panel/user/{{.ID}}">{{.ID}} - {{.Email}}</a>
+        {{end}}
+      </div>
+
+      <div class="containerData">
+        <div class="box column">
+          {{if .NewUserCreation}}
+            <form action="/register" method="POST" class="box column">
+              <h1>Nouveau utilisateur</h1>
+              <input type="text" name="email" placeholder="Email" required>
+              <span class="alertMessage">{{.EmailMessage}}</span>
+
+              <input type="password" name="password" placeholder="Password" required>
+              <span class="alertMessage">{{.PasswordMessage}}</span>
+      
+              <div class="box center space">
+                <label for="adminCheckbox">Administrateur: </label>
+                <input type="checkbox" id="adminCheckbox" name="admin" value="on">
+              </div>
+
+              <span class="alertMessage">{{.GlobalMessage}}</span>
+              <button type="submit">Ajouter l'utilisateur</button>
+            </form>
+          {{else if .TargetedUser}}
+            <label for="userID">ID:</label>
+            <textarea rows="1" id="userID" disabled readonly>{{.TargetedUser.ID}}</textarea>
+
+            <label for="userEmail">Email:</label>
+            <textarea rows="1" id="userEmail" disabled readonly>{{.TargetedUser.Email}}</textarea>
+
+            <label for="userCreatedDate">Créé le:</label>
+            <textarea rows="1" id="userCreatedDate" disabled readonly>{{.TargetedUser.CreatedAtFormatted}}</textarea>
+
+            <form action="/panel/user/edit/{{.TargetedUser.ID}}" method="post">
+              <label for="userAdmin">Admin:</label>
+              <select rows="1" id="userAdmin" name="admin" onchange="this.form.submit()">
+                <option value="false">Non</option>
+                <option value="true" {{if .TargetedUser.IsAdmin}} selected {{end}}>Oui</option>
+              </select>
+            </form>
+
+            <form action="/panel/user/delete/{{.TargetedUser.ID}}" method="post">
+              <button class="danger" type="submit">Suppimer</button>
+            </form>
+          {{else}}
+            <h2>Aucun utilisateur sélectionné</h2>
+            <hr>
+            <img class="illustration" src="/static/surveillance.svg" alt="surveillance image">
+          {{end}}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openTab(evt, tabName) {
+      let tabcontent, tablinks;
+      tabcontent = document.getElementsByClassName("tabcontent");
+      for (let i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+      }
+      tablinks = document.getElementsByClassName("tablinks");
+      for (let i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+      }
+      document.getElementById(tabName).style.display = "flex";
+      evt.currentTarget.className += " active";
+    }
+
+    let url = window.location.href;
+    if (url.indexOf("user") !== -1) {
+      document.getElementById("usersTab").click();
+    } else {
+      document.getElementById("colisTab").click();
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+      let colisInput = document.getElementById("colisInput");
+      let datalistColisID = document.getElementById('allColisPID');
+
+      colisInput.addEventListener('change', function() {
+        var selectedOption = datalistColisID.querySelector('option[value="' + colisInput.value + '"]');
+        if (selectedOption) {
+          window.location.href = '/panel/colis/' + selectedOption.value;
+        }
+      });
+
+      colisInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+          var selectedOption = datalistColisID.querySelector('option[value="' + colisInput.value + '"]');
+          if (selectedOption) {
+            window.location.href = '/panel/colis/' + selectedOption.value;
+          }
+        }
+      });
+
+
+
+      let userInput = document.getElementById("userInput");
+      let datalistUserID = document.getElementById('allUsersList');
+
+      userInput.addEventListener('change', function() {
+        var selectedOption = datalistUserID.querySelector('option[value="' + userInput.value + '"]');
+        if (selectedOption) {
+          window.location.href = '/panel/user/' + selectedOption.value;
+        }
+      });
+
+      userInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+          var selectedOption = datalistUserID.querySelector('option[value="' + userInput.value + '"]');
+          if (selectedOption) {
+            window.location.href = '/panel/user/' + selectedOption.value;
+          }
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>
