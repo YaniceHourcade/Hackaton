@@ -18,3 +18,8 @@ git clone https://github.com/YaniceHourcade/Hackaton.git
 2 - Accédez au dossier téléchargé et exécutez la commande `go run main.go` pour lancer le serveur web
 
 3 - Accédez au serveur web via l'url par défaut http://localhost:8080
+
+## Remerciements
+- Thomas CRECY (membre du projet)
+- Yanice HOURCADE (membre du projet)
+- Antoine REBERAT (membre du projet)
